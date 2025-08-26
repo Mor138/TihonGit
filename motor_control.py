@@ -26,7 +26,10 @@ speeds = [0.0] * 4  # Изменено на float
 last_step_time = [time.time()] * 4  # Инициализация текущим временем
 step_intervals = [0.0] * 4  # Изменено на float
 
-STEPS_PER_REVOLUTION = 200
+# Количество импульсов на один оборот двигателя.
+# Значение можно изменить через переменную среды PULSES_PER_REVOLUTION,
+# чтобы соответствовать настройкам микрошагов драйвера.
+PULSES_PER_REVOLUTION = int(os.environ.get("PULSES_PER_REVOLUTION", 1000))
 HYSTERESIS = 50
 MIN_STEP_INTERVAL = 0.0001  # Минимальный интервал между шагами (100 мкс)
 
@@ -83,11 +86,11 @@ def update_step_intervals():
             elif speeds[i] > target_speed:
                 speeds[i] = max(speeds[i] - speed_diff, target_speed)
         
-        # Рассчитываем интервал между шагами
+        # Рассчитываем интервал между импульсами
         if speeds[i] > 0:
-            # Шагов в секунду = (об/мин * шагов/оборот) / 60
-            steps_per_sec = (speeds[i] * STEPS_PER_REVOLUTION) / 60.0
-            step_intervals[i] = 1.0 / steps_per_sec if steps_per_sec > 0 else float('inf')
+            # Импульсов в секунду = (об/мин * импульсов/оборот) / 60
+            pulses_per_sec = (speeds[i] * PULSES_PER_REVOLUTION) / 60.0
+            step_intervals[i] = 1.0 / pulses_per_sec if pulses_per_sec > 0 else float('inf')
             # Ограничиваем минимальный интервал
             step_intervals[i] = max(step_intervals[i], MIN_STEP_INTERVAL)
         else:
