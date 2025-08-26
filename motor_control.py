@@ -12,6 +12,9 @@ MOTOR_SETTINGS = [
     {"speed": 10000, "acceleration": 100, "distance_R": 4000, "distance_D": 7000}    # Мотор 4 (АКПП)
 ]
 
+# Максимально допустимая скорость для мотора руля (об/мин)
+MAX_STEERING_SPEED = 15000
+
 DIR_PINS = [26, 6, 0, 11]       # GPIO для DIR
 STEP_PINS = [20, 12, 1, 8]      # GPIO для STEP
 # Концевики только для газа (1) и тормоза (2)
@@ -42,12 +45,23 @@ def setup_limit_switch_pins():
     print("[INFO] Пины концевиков настроены.")
     
 def update_motor_settings(new_settings):
+    """Обновление параметров моторов с ограничением скорости руля."""
     global MOTOR_SETTINGS
+
+    # Ограничиваем скорость для мотора руля, чтобы избежать нестабильного поведения
+    if new_settings and new_settings[0].get("speed", 0) > MAX_STEERING_SPEED:
+        print(
+            f"[WARNING] Скорость мотора руля превышает допустимое значение. "
+            f"Ограничено {MAX_STEERING_SPEED} об/мин."
+        )
+        new_settings[0]["speed"] = MAX_STEERING_SPEED
+
     MOTOR_SETTINGS = new_settings
+
     # Сброс текущих скоростей при изменении настроек
     for i in range(4):
         speeds[i] = 0.0
-    print("[MOTOR] Настройки моторов обновлены")    
+    print("[MOTOR] Настройки моторов обновлены")
 
 def update_step_intervals():
     global MOTOR_SETTINGS, speeds, step_intervals
