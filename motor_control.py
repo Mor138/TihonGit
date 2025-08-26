@@ -64,6 +64,12 @@ def update_motor_settings(new_settings):
     # Сброс текущих скоростей при изменении настроек
     for i in range(4):
         speeds[i] = 0.0
+        last_step_time[i] = time.time()
+
+    # Немедленно пересчитываем интервалы шагов, чтобы
+    # новые скорости и ускорения применялись без задержки
+    update_step_intervals()
+
     print("[MOTOR] Настройки моторов обновлены")
 
 def update_step_intervals():
