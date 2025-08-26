@@ -1,0 +1,23 @@
+[
+    {
+        "speed": 31500,
+        "acceleration": 49100,
+        "distance": 12500
+    },
+    {
+        "speed": 9000,
+        "acceleration": 7600,
+        "distance": 1000
+    },
+    {
+        "speed": 10000,
+        "acceleration": 5100,
+        "distance": 4000
+    },
+    {
+        "speed": 11000,
+        "acceleration": 4600,
+        "distance_R": 4000,
+        "distance_D": 4000
+    }
+]
