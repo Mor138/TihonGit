@@ -13,7 +13,7 @@ MOTOR_SETTINGS = [
 ]
 
 # Максимально допустимая скорость для мотора руля (об/мин)
-MAX_STEERING_SPEED = 15000
+MAX_STEERING_SPEED = 25000
 
 DIR_PINS = [26, 6, 0, 11]       # GPIO для DIR
 STEP_PINS = [20, 12, 1, 8]      # GPIO для STEP
@@ -260,4 +260,5 @@ def cleanup():
     GPIO.cleanup()
 
 # Регистрация функции очистки при завершении
+
 atexit.register(cleanup)
