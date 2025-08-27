@@ -1,17 +1,17 @@
 [
     {
-        "speed": 15000,
-        "acceleration": 20000,
+        "speed": 10000,
+        "acceleration": 5000,
         "distance": 12500
     },
     {
-        "speed": 9000,
-        "acceleration": 7600,
+        "speed": 10000,
+        "acceleration": 5000,
         "distance": 1000
     },
     {
         "speed": 10000,
-        "acceleration": 5100,
+        "acceleration": 5000,
         "distance": 4000
     },
     {
