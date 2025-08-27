@@ -198,7 +198,8 @@ class Menu:
         current_value = self.motor_settings[self.current_motor_index].get(param, 0)
         current_value = max(0, current_value + delta)
         self.motor_settings[self.current_motor_index][param] = current_value
-        self.apply_motor_settings()
+        # Сохраняем изменения и сразу применяем к моторам
+        self.save_settings()
 
         key = (self.current_motor_index, self.current_param_index)
         self.param_menu_images[key] = self.create_parameter_menu_image(*key)
@@ -231,6 +232,9 @@ class Menu:
 
         with open(SETTINGS_FILE, "w") as f:
             json.dump(correct_motor_settings, f, indent=4)
+            # Гарантируем немедленную запись на диск
+            f.flush()
+            os.fsync(f.fileno())
 
         self.motor_settings = correct_motor_settings
         self.apply_motor_settings()
