@@ -4,16 +4,15 @@ import time
 def receive_data(motor_control):
     try:
         uart = serial.Serial(
-            port='/dev/serial0',
+            port='/dev/ttyAMA0',   # <— было /dev/serial0
             baudrate=115200,
             bytesize=serial.EIGHTBITS,
             parity=serial.PARITY_NONE,
             stopbits=serial.STOPBITS_ONE,
-            timeout=1  # Важно добавить timeout
+            timeout=0.01,
+            write_timeout=0
         )
-        print("[UART] Порт /dev/serial0 успешно открыт")
-    except serial.SerialException as e:
-        print(f"[UART ERROR] Ошибка открытия порта: {e}")
+    except serial.SerialException:
         return
 
     buffer = bytearray()
@@ -22,64 +21,59 @@ def receive_data(motor_control):
 
     try:
         while True:
-            # Читаем все доступные данные
             data = uart.read(uart.in_waiting or 1)
             if data:
                 buffer.extend(data)
-                
-                # Обрабатываем все полные пакеты в буфере
+
+                # разбор всех полных пакетов
                 while len(buffer) >= 32:
-                    # Проверяем заголовок пакета
+                    # заголовок
                     if buffer[0] == 0x20 and buffer[1] == 0x40:
                         packet = buffer[:32]
-                        # Проверка контрольной суммы
+
+                        # контрольная сумма
                         checksum = 0xFFFF
                         for b in packet[:-2]:
                             checksum -= b
                         checksum &= 0xFFFF
-                        
                         packet_checksum = packet[-2] | (packet[-1] << 8)
-                        
+
                         if checksum == packet_checksum:
-                            # Парсим каналы
+                            # каналы
                             channels = []
                             for i in range(10):
                                 lo = packet[2 + i*2]
                                 hi = packet[3 + i*2]
                                 channels.append(lo | (hi << 8))
-                            
+
                             signal_ok = channels[6] >= 800
                             if not signal_ok and not connection_lost:
-                                print("Connection lost! (Signal below 800)")
                                 motor_control.safety_mode()
-                            elif signal_ok and connection_lost:
-                                print("Connection OK (Signal above 800)")
                             connection_lost = not signal_ok
-                            
+
                             if signal_ok:
                                 if first_run:
                                     motor_control.positions[0] = 0
                                     first_run = False
                                 else:
-                                    # Получаем актуальные настройки
                                     settings = motor_control.get_motor_settings()
-                                    
-                                    # Рулевое управление (используем полную дистанцию)
+
+                                    # Руль
                                     max_steer = settings[0]["distance"]
                                     motor_control.target_positions[0] = int((channels[0] - 1500) * (max_steer / 500))
-                                    
-                                    # Газ (используем дистанцию газа)
+
+                                    # Газ
                                     max_gas = settings[1]["distance"]
                                     if channels[1] > 1500:
                                         motor_control.target_positions[1] = int((channels[1] - 1500) * (max_gas / 500))
                                     else:
                                         motor_control.target_positions[1] = 0
-                                        
-                                    # Тормоз (используем дистанцию тормоза)
+
+                                    # Тормоз
                                     max_brake = settings[2]["distance"]
                                     motor_control.target_positions[2] = int((channels[2] - 1000) * (max_brake / 1000))
-                                    
-                                    # АКПП (используем специальные дистанции)
+
+                                    # АКПП
                                     akpp_value = channels[5]
                                     if akpp_value < 1200:
                                         motor_control.target_positions[3] = -settings[3]["distance_R"]
@@ -87,22 +81,18 @@ def receive_data(motor_control):
                                         motor_control.target_positions[3] = settings[3]["distance_D"]
                                     else:
                                         motor_control.target_positions[3] = 0
-                                    
-                            
-                            # Удаляем обработанный пакет
+
+                            # сдвиг буфера
                             del buffer[:32]
                             break
                         else:
-                            # Неверная контрольная сумма - удаляем первый байт
                             del buffer[0]
                     else:
-                        # Неверный заголовок - удаляем первый байт
                         del buffer[0]
             else:
-                # Если данных нет, делаем небольшую паузу
-                time.sleep(0.01)
-                
-            # Обновляем моторы
+                time.sleep(0.001)
+
+            # обновление моторов
             motor_control.update_step_intervals()
             for i in range(4):
                 if i == 3:
@@ -111,6 +101,9 @@ def receive_data(motor_control):
                     motor_control.move_motor(i)
 
     except KeyboardInterrupt:
-        print("\nExiting...")
+        pass
     finally:
-        uart.close()
+        try:
+            uart.close()
+        except Exception:
+            pass
